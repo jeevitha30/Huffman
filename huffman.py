@@ -24,18 +24,18 @@ def Huffman_code(root):
 		Huffman_code(root.right)
 
 # inorder_traversal of tree
-def inorder_traversal(root, arr, count):
+def inorder_traversal(root, encoding, count):
 	if(root != None):
 		if root.left != None:
-			arr.insert(count, 0)
-			inorder_traversal(root.left, arr, count+1)
+			encoding.insert(count, 0)
+			inorder_traversal(root.left, encoding, count+1)
 		if root.right != None:
-			arr.insert(count, 1)
-			inorder_traversal(root.right ,arr, count+1)
+			encoding.insert(count, 1)
+			inorder_traversal(root.right, encoding, count+1)
 		if root.left == None and root.right == None:
 			encode=str()
-			for i in range(count):
-				encode+=str(arr[i])
+			for itr in range(count):
+				encode += str(encoding[itr])
 			root.code=encode
 
 # encode the input files
@@ -60,7 +60,7 @@ def encode(input_file, output_file):
 		myQueue.put((count, char, root))
 	global encode_map
 	last_node = []
-	arr = []
+	encoding = []
 	counter = 1
 	file1.close()
 	# iterate over priority queue for creating tree by taking first two elements in myQueue
@@ -90,7 +90,7 @@ def encode(input_file, output_file):
 		counter = counter + 1
 	counter = 0
 	# Traversing over the root node of tree inorder to set the encode string for tree elements
-	inorder_traversal(last_node, arr, counter)
+	inorder_traversal(last_node, encoding, counter)
 	Huffman_code(last_node)
 	file1 = open(input_file, 'r')
 	file_content = file1.read()
@@ -107,10 +107,10 @@ def encode(input_file, output_file):
 	file2.write(encode)
 	file2.close()
 	file = open('encode_map.txt', 'w')
-	for x,y in encode_map.items():
-		if x != '':
-			file.write(str(x))
-			file.write(str(y))
+	for char,encode in encode_map.items():
+		if char != '':
+			file.write(str(char))
+			file.write(str(encode))
 			file.write('`')
 	file.close()
 
@@ -132,15 +132,15 @@ def decode(input_file, output_file):
 			break
 	file1.close()
 	file1 = open(input_file, 'r')
-	file_content=file1.read()
+	file_content = file1.read()
 	file2 = open(output_file, 'w+')
-	code=str()
+	key = str()
 	# write the decoded data to output file
 	for line in file_content:
-		code += line
-		if code in encode_map.keys():
-			file2.write(encode_map[code])
-			code=str()
+		key += line
+		if key in encode_map.keys():
+			file2.write(encode_map[key])
+			key = str()
 
 def get_options(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Huffman compression.")
