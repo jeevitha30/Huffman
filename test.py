@@ -2,7 +2,7 @@
 import unittest
 import filecmp
 from queue import PriorityQueue
-from huffman import encode, decode, get_frequencies, generate_priorityqueue, convert_to_char
+from huffman import encode, decode, get_frequencies, get_priorityqueue, convert_to_char
 
 class TestHuffman(unittest.TestCase):
 
@@ -12,10 +12,9 @@ class TestHuffman(unittest.TestCase):
 		self.assertDictEqual(expected_output, actual_output)
 		print("tested frequencies")
 
-	def test_generate_priorityqueue(self):
+	def test_get_priorityqueue(self):
 		charcount = {'h':5,'i':4}
-		myQueue = PriorityQueue()
-		generate_priorityqueue(myQueue, charcount)
+		myQueue = get_priorityqueue(charcount)
 		first = myQueue.get()
 		assert first[0] == 4
 		second = myQueue.get()

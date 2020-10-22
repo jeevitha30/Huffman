@@ -14,14 +14,14 @@ class Node:
 		self.value = value
 		self.code=None
 	# traversing over tree for setting the encode string
-	def inorder_traversal(self, encoding, count, encode_map):
+	def traversal(self, encoding, count, encode_map):
 		if(self != None):
 			if self.left != None:
 				encoding.insert(count, 0)
-				self.left.inorder_traversal(encoding, count+1, encode_map)
+				self.left.traversal(encoding, count+1, encode_map)
 			if self.right != None:
 				encoding.insert(count, 1)
-				self.right.inorder_traversal( encoding, count+1, encode_map)
+				self.right.traversal( encoding, count+1, encode_map)
 			if self.left == None and self.right == None:
 				encode=str()
 				for itr in range(count):
@@ -40,15 +40,17 @@ def get_frequencies(content):
 	return charcounts
 
 # create priority queue inorder to maintain sorted order
-def generate_priorityqueue(myQueue, charcounts):
-		for char,count in charcounts.items():
-			root = Node(char, count)
-			myQueue.put((count, char, root))
+def get_priorityqueue(charcounts):
+	myQueue = PriorityQueue()
+	for char,count in charcounts.items():
+		root = Node(char, count)
+		myQueue.put((count, char, root))
+	return myQueue
 
 # iterate over priority queue for generating tree
 def  generate_tree(myQueue):
 	counter = 1
-	last_node = []
+	root_node = []
 	while not myQueue.empty():
 		if counter == 1:
 			left = myQueue.get()
@@ -56,12 +58,12 @@ def  generate_tree(myQueue):
 			right = myQueue.get()
 		if myQueue.qsize() == 0 :
 			if counter != 1:
-				frequency = left[0] + last_node.value
-				char = left[1] + last_node.key
+				frequency = left[0] + root_node.value
+				char = left[1] + root_node.key
 				new_node = Node(char, frequency)
 				new_node.left = left[2]
-				new_node.right = last_node
-				last_node = new_node
+				new_node.right = root_node
+				root_node = new_node
 		if counter == 3:
 			# Taking first two elements in myQueue for generating tree
 			frequency = left[0] + right[0]
@@ -70,14 +72,14 @@ def  generate_tree(myQueue):
 			new_node = Node(char, frequency)
 			new_node.left = left[2]
 			new_node.right = right[2]
-			last_node = new_node
+			root_node = new_node
 			if myQueue.qsize() != 0 :
 				myQueue.put((frequency, char, new_node))
 		counter = counter + 1
-	return last_node
+	return root_node
 
 # write the encoded information to output file
-def encode_outputfile(input_file, output_file, encode_map):
+def write_encoded_data(file_content, output_file, encode_map):
 	# write the encode map length and contents to output file
 	file = open(output_file, 'wb+')
 	file.write(len(encode_map).to_bytes(1, byteorder='big', signed=False))
@@ -87,9 +89,6 @@ def encode_outputfile(input_file, output_file, encode_map):
 			file.write(str(encode).encode())
 			file.write(str('`').encode())
 	# create the encoded data using map
-	file1 = open(input_file, 'r')
-	file_content = file1.read()
-	file1.close()
 	char = str()
 	encode_data =''
 	encode_data = ''.join([encode_map[char] for char in file_content])
@@ -115,9 +114,10 @@ def convert_to_char(input_str):
 	return char
 
 # get the encoded map and encoded data from input file
-def decode_inputfile(input_file, encode_map):
+def decode_file(input_file):
 	with open(input_file, 'rb') as input_fp:
 		byte_data = str()
+		encode_map ={}
 		# read the input file as bytes
 		byte = input_fp.read(1)
 		while len(byte) > 0:
@@ -154,10 +154,10 @@ def decode_inputfile(input_file, encode_map):
 		# get the encoded_data by rempving the pad data
 		encoded_data = byte_data[(index+1)*8:]
 		encoded_data = encoded_data[:-int(convert_to_char(pad_data))]
-		return encoded_data
+		return encoded_data, encode_map
 
 # write the original data by decoding the encoded data using map
-def write_outputfile(output_file, encode_map, encoded_data):
+def write_decoded_data(output_file, encode_map, encoded_data):
 	with open(output_file, 'w+') as output_fp:
 		char = str()
 		for line in encoded_data:
@@ -173,30 +173,29 @@ def write_outputfile(output_file, encode_map, encoded_data):
 def encode(input_file, output_file):
 	print("encoding ", input_file, output_file)
 	file1 = open(input_file, 'r')
+	file_content = file1.read()
 	# counting the character frequecies of input file
-	charcounts = get_frequencies(file1.read())
+	charcounts = get_frequencies(file_content)
 	file1.close()
 	# create priority queue(inorder to maintain sorted order) using frequency count
-	myQueue = PriorityQueue()
-	generate_priorityqueue(myQueue, charcounts)
+	myQueue = get_priorityqueue(charcounts)
 	# iterate over priority queue for generating tree by taking first two elements in myQueue
-	last_node = generate_tree(myQueue)
+	tree = generate_tree(myQueue)
 	# Traversing over the root node of tree inorder to set the encode string for tree elements and generate encode map
 	counter = 0
 	encoding = []
 	encode_map = {}
-	last_node.inorder_traversal(encoding, counter, encode_map)
+	tree.traversal(encoding, counter, encode_map)
 	# write the encoded information to output file
-	encode_outputfile(input_file, output_file, encode_map)
+	write_encoded_data(file_content, output_file, encode_map)
 
 # decode the input files
 def decode(input_file, output_file):
 	print("decoding ", input_file, output_file)
-	encode_map ={}
 	# get the encoded map and encoded data from input file
-	encoded_data = decode_inputfile(input_file, encode_map)
+	encoded_data, encode_map = decode_file(input_file)
 	# write the original data by decoding the encoded data using map
-	write_outputfile(output_file, encode_map, encoded_data)
+	write_decoded_data(output_file, encode_map, encoded_data)
 	return True
 
 def get_options(args=sys.argv[1:]):
